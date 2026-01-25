@@ -1,75 +1,82 @@
 <?php
+require_once "../includes/auth.php";
 require_once "../config/db.php";
+require_once "../includes/header.php";
 
-// ------------------------
-// ADD ATTENDANCE (Prevent duplicate)
-// ------------------------
+/* =========================
+   ADD ATTENDANCE (NO DUPLICATES)
+========================= */
 if (isset($_POST['add_attendance'])) {
     $student_id = $_POST['student_id'];
-    $module_id = $_POST['module_id'];
-    $attendance = $_POST['attendance_percentage'];
+    $module_id  = $_POST['module_id'];
+    $attendance = $_POST['attendance'];
 
-    if ($student_id && $module_id && is_numeric($attendance)) {
-
-        // Check if record already exists
-        $check = $pdo->prepare(
-            "SELECT id FROM attendance WHERE student_id = ? AND module_id = ?"
-        );
-        $check->execute([$student_id, $module_id]);
-
-        if ($check->rowCount() == 0) {
-            $stmt = $pdo->prepare(
-                "INSERT INTO attendance (student_id, module_id, attendance_percentage)
-                 VALUES (?, ?, ?)"
-            );
-            $stmt->execute([$student_id, $module_id, $attendance]);
-        }
+    if ($attendance < 0 || $attendance > 100) {
+        setFlash('error', 'Attendance must be between 0 and 100.');
+        header("Location: attendance.php");
+        exit;
     }
-}
 
-// ------------------------
-// DELETE ATTENDANCE
-// ------------------------
-if (isset($_GET['delete'])) {
-    $stmt = $pdo->prepare("DELETE FROM attendance WHERE id = ?");
-    $stmt->execute([$_GET['delete']]);
-}
-
-// ------------------------
-// UPDATE ATTENDANCE
-// ------------------------
-if (isset($_POST['update_attendance'])) {
-    $stmt = $pdo->prepare(
-        "UPDATE attendance
-         SET student_id = ?, module_id = ?, attendance_percentage = ?
-         WHERE id = ?"
+    // 🔎 Check duplicate attendance
+    $check = $pdo->prepare(
+        "SELECT id FROM attendance
+         WHERE student_id = ? AND module_id = ?"
     );
-    $stmt->execute([
-        $_POST['student_id'],
-        $_POST['module_id'],
-        $_POST['attendance_percentage'],
-        $_POST['id']
-    ]);
+    $check->execute([$student_id, $module_id]);
+
+    if ($check->fetch()) {
+        setFlash(
+            'error',
+            'Attendance for this student and module already exists.'
+        );
+        header("Location: attendance.php");
+        exit;
+    }
+
+    // ✅ Insert attendance
+    $stmt = $pdo->prepare(
+        "INSERT INTO attendance (student_id, module_id, attendance_percentage)
+         VALUES (?, ?, ?)"
+    );
+    $stmt->execute([$student_id, $module_id, $attendance]);
+
+    setFlash('success', 'Attendance added successfully.');
+    header("Location: attendance.php");
+    exit;
 }
 
-// ------------------------
-// FETCH STUDENTS & MODULES
-// ------------------------
-$students = $pdo->query("SELECT id, name FROM students")->fetchAll();
-$modules  = $pdo->query("SELECT id, module_name FROM modules")->fetchAll();
+/* =========================
+   DELETE ATTENDANCE
+========================= */
+if (isset($_POST['delete_attendance'])) {
+    $pdo->prepare("DELETE FROM attendance WHERE id = ?")
+        ->execute([$_POST['id']]);
 
-// ------------------------
-// FETCH ATTENDANCE RECORDS
-// ------------------------
+    setFlash('success', 'Attendance deleted.');
+    header("Location: attendance.php");
+    exit;
+}
+
+/* =========================
+   FETCH DATA
+========================= */
+$students = $pdo->query(
+    "SELECT id, name FROM students"
+)->fetchAll();
+
+$modules = $pdo->query(
+    "SELECT id, module_name FROM modules"
+)->fetchAll();
+
 $records = $pdo->query(
-    "SELECT attendance.id, students.name AS student_name,
-            modules.module_name, attendance.attendance_percentage
+    "SELECT attendance.id,
+            students.name AS student,
+            modules.module_name,
+            attendance.attendance_percentage
      FROM attendance
      JOIN students ON attendance.student_id = students.id
      JOIN modules ON attendance.module_id = modules.id"
 )->fetchAll();
-
-require_once "../includes/header.php";
 ?>
 
 <h2>Manage Attendance</h2>
@@ -93,80 +100,45 @@ require_once "../includes/header.php";
         <?php endforeach; ?>
     </select>
 
-    <input type="number" name="attendance_percentage"
-           min="0" max="100" placeholder="Attendance %" required>
+    <input type="number"
+           name="attendance"
+           min="0" max="100"
+           placeholder="Attendance %"
+           required>
 
-    <button type="submit" name="add_attendance">Add Attendance</button>
+    <button name="add_attendance">Add Attendance</button>
 </form>
-
-<br>
 
 <table>
-    <tr>
-        <th>Student</th>
-        <th>Module</th>
-        <th>Attendance (%)</th>
-        <th>Action</th>
-    </tr>
+<tr>
+    <th>Student</th>
+    <th>Module</th>
+    <th>Attendance (%)</th>
+    <th>Action</th>
+</tr>
 
-    <?php foreach ($records as $r): ?>
-    <tr>
-        <td><?= htmlspecialchars($r['student_name']) ?></td>
-        <td><?= htmlspecialchars($r['module_name']) ?></td>
-        <td><?= htmlspecialchars($r['attendance_percentage']) ?>%</td>
-        <td>
-            <a href="?edit=<?= $r['id'] ?>">Edit</a> |
-            <a href="?delete=<?= $r['id'] ?>"
-               onclick="return confirm('Delete attendance?')">Delete</a>
-        </td>
-    </tr>
-    <?php endforeach; ?>
+<?php if (!$records): ?>
+<tr>
+    <td colspan="4">No attendance records found.</td>
+</tr>
+<?php endif; ?>
+
+<?php foreach ($records as $r): ?>
+<tr>
+    <td><?= htmlspecialchars($r['student']) ?></td>
+    <td><?= htmlspecialchars($r['module_name']) ?></td>
+    <td><?= htmlspecialchars($r['attendance_percentage']) ?>%</td>
+    <td>
+        <form method="post" style="display:inline;">
+            <input type="hidden" name="id" value="<?= $r['id'] ?>">
+            <button name="delete_attendance"
+                    onclick="return confirm('Delete this attendance?')">
+                Delete
+            </button>
+        </form>
+    </td>
+</tr>
+<?php endforeach; ?>
 </table>
-
-<?php
-// ------------------------
-// EDIT FORM
-// ------------------------
-if (isset($_GET['edit'])):
-    $stmt = $pdo->prepare("SELECT * FROM attendance WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
-    $data = $stmt->fetch();
-
-    if ($data):
-?>
-
-<hr>
-
-<h3>Edit Attendance</h3>
-
-<form method="post">
-    <input type="hidden" name="id" value="<?= $data['id'] ?>">
-
-    <select name="student_id" required>
-        <?php foreach ($students as $s): ?>
-            <option value="<?= $s['id'] ?>"
-                <?= $s['id'] == $data['student_id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($s['name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    <select name="module_id" required>
-        <?php foreach ($modules as $m): ?>
-            <option value="<?= $m['id'] ?>"
-                <?= $m['id'] == $data['module_id'] ? 'selected' : '' ?>>
-                <?= htmlspecialchars($m['module_name']) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    <input type="number" name="attendance_percentage"
-           min="0" max="100"
-           value="<?= htmlspecialchars($data['attendance_percentage']) ?>" required>
-
-    <button type="submit" name="update_attendance">Update</button>
-</form>
-
-<?php endif; endif; ?>
 
 <?php require_once "../includes/footer.php"; ?>

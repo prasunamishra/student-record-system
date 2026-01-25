@@ -1,50 +1,83 @@
 <?php
-require_once "../includes/header.php";
+require_once "../includes/auth.php";
 require_once "../config/db.php";
+require_once "../includes/header.php";
 
-// ADD GRADE
+/* =========================
+   ADD GRADE (VALIDATION)
+========================= */
 if (isset($_POST['add_grade'])) {
     $student_id = $_POST['student_id'];
-    $module_id = $_POST['module_id'];
-    $grade = $_POST['grade'];
+    $module_id  = $_POST['module_id'];
+    $grade      = strtoupper(trim($_POST['grade']));
 
-    if ($student_id && $module_id && $grade) {
-        $stmt = $pdo->prepare(
-            "INSERT INTO grades (student_id, module_id, grade)
-             VALUES (?, ?, ?)"
+    $allowedGrades = ['A', 'B', 'C', 'D', 'F'];
+
+    if (!in_array($grade, $allowedGrades)) {
+        setFlash(
+            'error',
+            'Invalid grade. Allowed grades: A, B, C, D, F.'
         );
-        $stmt->execute([$student_id, $module_id, $grade]);
+        header("Location: grades.php");
+        exit;
     }
-}
 
-// DELETE GRADE
-if (isset($_GET['delete'])) {
-    $stmt = $pdo->prepare("DELETE FROM grades WHERE id = ?");
-    $stmt->execute([$_GET['delete']]);
-}
-
-// UPDATE GRADE
-if (isset($_POST['update_grade'])) {
-    $stmt = $pdo->prepare(
-        "UPDATE grades
-         SET student_id = ?, module_id = ?, grade = ?
-         WHERE id = ?"
+    // 🔎 Prevent duplicate grade for same student & module
+    $check = $pdo->prepare(
+        "SELECT id FROM grades
+         WHERE student_id = ? AND module_id = ?"
     );
-    $stmt->execute([
-        $_POST['student_id'],
-        $_POST['module_id'],
-        $_POST['grade'],
-        $_POST['id']
-    ]);
+    $check->execute([$student_id, $module_id]);
+
+    if ($check->fetch()) {
+        setFlash(
+            'error',
+            'Grade already exists for this student and module.'
+        );
+        header("Location: grades.php");
+        exit;
+    }
+
+    // ✅ Insert grade
+    $stmt = $pdo->prepare(
+        "INSERT INTO grades (student_id, module_id, grade)
+         VALUES (?, ?, ?)"
+    );
+    $stmt->execute([$student_id, $module_id, $grade]);
+
+    setFlash('success', 'Grade added successfully.');
+    header("Location: grades.php");
+    exit;
 }
 
-// FETCH DATA
-$students = $pdo->query("SELECT id, name FROM students")->fetchAll();
-$modules = $pdo->query("SELECT id, module_name FROM modules")->fetchAll();
+/* =========================
+   DELETE GRADE
+========================= */
+if (isset($_POST['delete_grade'])) {
+    $pdo->prepare("DELETE FROM grades WHERE id = ?")
+        ->execute([$_POST['id']]);
 
-$grades = $pdo->query(
-    "SELECT grades.id, students.name AS student,
-            modules.module_name, grades.grade
+    setFlash('success', 'Grade deleted.');
+    header("Location: grades.php");
+    exit;
+}
+
+/* =========================
+   FETCH DATA
+========================= */
+$students = $pdo->query(
+    "SELECT id, name FROM students"
+)->fetchAll();
+
+$modules = $pdo->query(
+    "SELECT id, module_name FROM modules"
+)->fetchAll();
+
+$records = $pdo->query(
+    "SELECT grades.id,
+            students.name AS student,
+            modules.module_name,
+            grades.grade
      FROM grades
      JOIN students ON grades.student_id = students.id
      JOIN modules ON grades.module_id = modules.id"
@@ -72,32 +105,44 @@ $grades = $pdo->query(
         <?php endforeach; ?>
     </select>
 
-    <input type="text" name="grade" placeholder="Grade (A/B/C)" required>
+    <input name="grade"
+           placeholder="Grade (A-F)"
+           maxlength="1"
+           required>
 
-    <button type="submit" name="add_grade">Add Grade</button>
+    <button name="add_grade">Add Grade</button>
 </form>
 
-<br>
-
 <table>
-    <tr>
-        <th>Student</th>
-        <th>Module</th>
-        <th>Grade</th>
-        <th>Action</th>
-    </tr>
+<tr>
+    <th>Student</th>
+    <th>Module</th>
+    <th>Grade</th>
+    <th>Action</th>
+</tr>
 
-    <?php foreach ($grades as $g): ?>
-    <tr>
-        <td><?= htmlspecialchars($g['student']) ?></td>
-        <td><?= htmlspecialchars($g['module_name']) ?></td>
-        <td><?= htmlspecialchars($g['grade']) ?></td>
-        <td>
-            <a href="grades.php?delete=<?= $g['id'] ?>"
-               onclick="return confirm('Delete this grade?')">Delete</a>
-        </td>
-    </tr>
-    <?php endforeach; ?>
+<?php if (!$records): ?>
+<tr>
+    <td colspan="4">No grades recorded.</td>
+</tr>
+<?php endif; ?>
+
+<?php foreach ($records as $r): ?>
+<tr>
+    <td><?= htmlspecialchars($r['student']) ?></td>
+    <td><?= htmlspecialchars($r['module_name']) ?></td>
+    <td><?= htmlspecialchars($r['grade']) ?></td>
+    <td>
+        <form method="post" style="display:inline;">
+            <input type="hidden" name="id" value="<?= $r['id'] ?>">
+            <button name="delete_grade"
+                    onclick="return confirm('Delete this grade?')">
+                Delete
+            </button>
+        </form>
+    </td>
+</tr>
+<?php endforeach; ?>
 </table>
 
 <?php require_once "../includes/footer.php"; ?>

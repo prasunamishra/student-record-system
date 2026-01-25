@@ -1,49 +1,82 @@
 <?php
+require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
-// Fetch students with course
-$stmt = $pdo->query(
-    "SELECT students.id, students.name, students.email, courses.course_name
-     FROM students
-     LEFT JOIN courses ON students.course_id = courses.id"
-);
-$students = $stmt->fetchAll();
+/* =========================
+   DASHBOARD STATS
+========================= */
 
-// Total students count
-$totalStudents = count($students);
+// Total students
+$totalStudents = $pdo->query(
+    "SELECT COUNT(*) FROM students"
+)->fetchColumn();
+
+// Total courses
+$totalCourses = $pdo->query(
+    "SELECT COUNT(*) FROM courses"
+)->fetchColumn();
+
+// Total modules
+$totalModules = $pdo->query(
+    "SELECT COUNT(*) FROM modules"
+)->fetchColumn();
+
+// Students with low attendance (< 75%)
+$lowAttendance = $pdo->query(
+    "SELECT students.name,
+            modules.module_name,
+            attendance.attendance_percentage
+     FROM attendance
+     JOIN students ON attendance.student_id = students.id
+     JOIN modules ON attendance.module_id = modules.id
+     WHERE attendance.attendance_percentage < 75"
+)->fetchAll();
 ?>
 
-<h2 style="display:inline-block;">Student List</h2>
-
-<span style="float:right; font-weight:bold;">
-    Total Students: <?php echo $totalStudents; ?>
-</span>
-
-<p>Below is the list of students with their ID, email and enrolled course.</p>
+<h2>Dashboard</h2>
 
 <table>
-    <tr>
-        <th>Student ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Course</th>
-    </tr>
+<tr>
+    <th>Metric</th>
+    <th>Value</th>
+</tr>
+<tr>
+    <td>Total Students</td>
+    <td><?= $totalStudents ?></td>
+</tr>
+<tr>
+    <td>Total Courses</td>
+    <td><?= $totalCourses ?></td>
+</tr>
+<tr>
+    <td>Total Modules</td>
+    <td><?= $totalModules ?></td>
+</tr>
+</table>
 
-    <?php if ($totalStudents == 0): ?>
-        <tr>
-            <td colspan="4">No students found.</td>
-        </tr>
-    <?php endif; ?>
+<h3>Students with Low Attendance (&lt; 75%)</h3>
 
-    <?php foreach ($students as $s): ?>
-    <tr>
-        <td><?php echo htmlspecialchars($s['id']); ?></td>
-        <td><?php echo htmlspecialchars($s['name']); ?></td>
-        <td><?php echo htmlspecialchars($s['email']); ?></td>
-        <td><?php echo htmlspecialchars($s['course_name'] ?? 'Not Assigned'); ?></td>
-    </tr>
-    <?php endforeach; ?>
+<table>
+<tr>
+    <th>Student</th>
+    <th>Module</th>
+    <th>Attendance</th>
+</tr>
+
+<?php if (!$lowAttendance): ?>
+<tr>
+    <td colspan="3">No low attendance cases 🎉</td>
+</tr>
+<?php endif; ?>
+
+<?php foreach ($lowAttendance as $row): ?>
+<tr>
+    <td><?= htmlspecialchars($row['name']) ?></td>
+    <td><?= htmlspecialchars($row['module_name']) ?></td>
+    <td><?= htmlspecialchars($row['attendance_percentage']) ?>%</td>
+</tr>
+<?php endforeach; ?>
 </table>
 
 <?php require_once "../includes/footer.php"; ?>
