@@ -11,12 +11,12 @@ if (isset($_POST['add_grade'])) {
     $module_id  = $_POST['module_id'];
     $grade      = strtoupper(trim($_POST['grade']));
 
-    $allowedGrades = ['A', 'B', 'C', 'D', 'F'];
+    $allowedGrades = ['A', 'B', 'C', 'D', 'E' , 'F'];
 
     if (!in_array($grade, $allowedGrades)) {
         setFlash(
             'error',
-            'Invalid grade. Allowed grades: A, B, C, D, F.'
+            'Invalid grade. Allowed grades: A, B, C, D, E, F.'
         );
         header("Location: grades.php");
         exit;

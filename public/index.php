@@ -1,10 +1,9 @@
 <?php
-require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
 /* =========================
-   DASHBOARD STATS
+   DASHBOARD STATS (ORIGINAL LOGIC)
 ========================= */
 
 // Total students
@@ -36,6 +35,25 @@ $lowAttendance = $pdo->query(
 
 <h2>Dashboard</h2>
 
+<!-- SUMMARY CARDS (STRUCTURE ONLY) -->
+<div class="cards">
+    <div class="card">
+        <h3>Total Students</h3>
+        <p><?= $totalStudents ?></p>
+    </div>
+
+    <div class="card">
+        <h3>Total Courses</h3>
+        <p><?= $totalCourses ?></p>
+    </div>
+
+    <div class="card">
+        <h3>Total Modules</h3>
+        <p><?= $totalModules ?></p>
+    </div>
+</div>
+
+<!-- ORIGINAL SUMMARY TABLE -->
 <table>
 <tr>
     <th>Metric</th>
@@ -55,6 +73,8 @@ $lowAttendance = $pdo->query(
 </tr>
 </table>
 
+
+<!-- LOW ATTENDANCE TABLE (ORIGINAL LOGIC) -->
 <h3>Students with Low Attendance (&lt; 75%)</h3>
 
 <table>
@@ -78,5 +98,6 @@ $lowAttendance = $pdo->query(
 </tr>
 <?php endforeach; ?>
 </table>
+</script>
 
 <?php require_once "../includes/footer.php"; ?>
