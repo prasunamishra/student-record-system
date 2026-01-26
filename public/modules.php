@@ -6,12 +6,18 @@ require_once "../includes/header.php";
 $editModule = null;
 
 /* ===============================
-   FETCH MODULE FOR EDIT
+   FETCH MODULE FOR EDIT (POST)
 ================================ */
-if (isset($_GET['edit'])) {
+if (isset($_POST['edit_module']) && is_numeric($_POST['edit_id'])) {
     $stmt = $pdo->prepare("SELECT * FROM modules WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
+    $stmt->execute([$_POST['edit_id']]);
     $editModule = $stmt->fetch();
+
+    if (!$editModule) {
+        setFlash('error', 'Module not found.');
+        header("Location: modules.php");
+        exit;
+    }
 }
 
 /* ===============================
@@ -21,18 +27,20 @@ if (isset($_POST['add_module'])) {
 
     if (empty($_POST['module_name']) || empty($_POST['course_id'])) {
         setFlash('error', 'Module name and course are required.');
-    } else {
-        $stmt = $pdo->prepare(
-            "INSERT INTO modules (module_name, course_id) VALUES (?, ?)"
-        );
-        $stmt->execute([
-            $_POST['module_name'],
-            $_POST['course_id']
-        ]);
-
-        setFlash('success', 'Module added successfully.');
+        header("Location: modules.php");
+        exit;
     }
 
+    $stmt = $pdo->prepare(
+        "INSERT INTO modules (module_name, course_id)
+         VALUES (?, ?)"
+    );
+    $stmt->execute([
+        $_POST['module_name'],
+        $_POST['course_id']
+    ]);
+
+    setFlash('success', 'Module added successfully.');
     header("Location: modules.php");
     exit;
 }
@@ -44,19 +52,22 @@ if (isset($_POST['update_module'])) {
 
     if (empty($_POST['module_name']) || empty($_POST['course_id'])) {
         setFlash('error', 'Module name and course are required.');
-    } else {
-        $stmt = $pdo->prepare(
-            "UPDATE modules SET module_name = ?, course_id = ? WHERE id = ?"
-        );
-        $stmt->execute([
-            $_POST['module_name'],
-            $_POST['course_id'],
-            $_POST['id']
-        ]);
-
-        setFlash('success', 'Module updated successfully.');
+        header("Location: modules.php");
+        exit;
     }
 
+    $stmt = $pdo->prepare(
+        "UPDATE modules
+         SET module_name = ?, course_id = ?
+         WHERE id = ?"
+    );
+    $stmt->execute([
+        $_POST['module_name'],
+        $_POST['course_id'],
+        $_POST['id']
+    ]);
+
+    setFlash('success', 'Module updated successfully.');
     header("Location: modules.php");
     exit;
 }
@@ -64,7 +75,7 @@ if (isset($_POST['update_module'])) {
 /* ===============================
    DELETE MODULE
 ================================ */
-if (isset($_POST['delete_module'])) {
+if (isset($_POST['delete_module']) && is_numeric($_POST['id'])) {
     $pdo->prepare("DELETE FROM modules WHERE id = ?")
         ->execute([$_POST['id']]);
 
@@ -88,6 +99,7 @@ $modules = $pdo->query(
 
 <h2>Manage Modules</h2>
 
+<!-- ADD / EDIT MODULE FORM -->
 <form method="post">
     <input type="hidden" name="id"
            value="<?= $editModule['id'] ?? '' ?>">
@@ -102,7 +114,7 @@ $modules = $pdo->query(
         <option value="">-- Select Course --</option>
         <?php foreach ($courses as $c): ?>
             <option value="<?= $c['id'] ?>"
-                <?= isset($editModule) && $editModule['course_id'] == $c['id'] ? 'selected' : '' ?>>
+                <?= ($editModule && $editModule['course_id'] == $c['id']) ? 'selected' : '' ?>>
                 <?= htmlspecialchars($c['course_name']) ?>
             </option>
         <?php endforeach; ?>
@@ -112,6 +124,8 @@ $modules = $pdo->query(
         <?= $editModule ? 'Update Module' : 'Add Module' ?>
     </button>
 </form>
+
+<hr>
 
 <table>
     <tr>
@@ -125,10 +139,17 @@ $modules = $pdo->query(
             <td><?= htmlspecialchars($m['module_name']) ?></td>
             <td><?= htmlspecialchars($m['course_name']) ?></td>
             <td>
-                <a href="modules.php?edit=<?= $m['id'] ?>">Edit</a>
-
+                <!-- EDIT (POST) -->
                 <form method="post" style="display:inline;">
-                    <input type="hidden" name="id" value="<?= $m['id'] ?>">
+                    <input type="hidden" name="edit_id"
+                           value="<?= $m['id'] ?>">
+                    <button name="edit_module">Edit</button>
+                </form>
+
+                <!-- DELETE -->
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="id"
+                           value="<?= $m['id'] ?>">
                     <button name="delete_module"
                             onclick="return confirm('Delete this module?')">
                         Delete

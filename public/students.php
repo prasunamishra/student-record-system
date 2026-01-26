@@ -4,14 +4,20 @@ require_once "../config/db.php";
 require_once "../includes/header.php";
 
 /* =========================
-   FETCH STUDENT FOR EDIT
+   FETCH STUDENT FOR EDIT (POST)
 ========================= */
 $editStudent = null;
 
-if (isset($_GET['edit'])) {
+if (isset($_POST['edit_student']) && is_numeric($_POST['edit_id'])) {
     $stmt = $pdo->prepare("SELECT * FROM students WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
+    $stmt->execute([$_POST['edit_id']]);
     $editStudent = $stmt->fetch();
+
+    if (!$editStudent) {
+        setFlash('error', 'Student not found.');
+        header("Location: students.php");
+        exit;
+    }
 }
 
 /* =========================
@@ -29,7 +35,6 @@ if (isset($_POST['add_student'])) {
         exit;
     }
 
-    // Check duplicate email or roll
     $check = $pdo->prepare(
         "SELECT id FROM students WHERE email = ? OR roll_number = ?"
     );
@@ -68,7 +73,6 @@ if (isset($_POST['update_student'])) {
         exit;
     }
 
-    // Check duplicates (exclude current)
     $check = $pdo->prepare(
         "SELECT id FROM students
          WHERE (email = ? OR roll_number = ?)
@@ -97,7 +101,7 @@ if (isset($_POST['update_student'])) {
 /* =========================
    DELETE STUDENT
 ========================= */
-if (isset($_POST['delete_student'])) {
+if (isset($_POST['delete_student']) && is_numeric($_POST['id'])) {
     $pdo->prepare("DELETE FROM students WHERE id = ?")
         ->execute([$_POST['id']]);
 
@@ -127,18 +131,15 @@ $students = $pdo->query(
 
     <input type="text" name="name"
            placeholder="Student Name"
-           value="<?= $editStudent['name'] ?? '' ?>"
-           required>
+           value="<?= $editStudent['name'] ?? '' ?>" required>
 
     <input type="email" name="email"
            placeholder="Email"
-           value="<?= $editStudent['email'] ?? '' ?>"
-           required>
+           value="<?= $editStudent['email'] ?? '' ?>" required>
 
     <input type="text" name="roll"
            placeholder="Roll Number"
-           value="<?= $editStudent['roll_number'] ?? '' ?>"
-           required>
+           value="<?= $editStudent['roll_number'] ?? '' ?>" required>
 
     <select name="course_id" required>
         <option value="">Select Course</option>
@@ -159,8 +160,7 @@ $students = $pdo->query(
 <hr>
 
 <!-- LIVE SEARCH -->
-<input type="text"
-       id="studentSearch"
+<input type="text" id="studentSearch"
        placeholder="Search by name, roll or course"
        style="margin-bottom:15px; width:300px;">
 
@@ -181,11 +181,15 @@ $students = $pdo->query(
     <td><?= htmlspecialchars($s['roll_number']) ?></td>
     <td><?= htmlspecialchars($s['course_name'] ?? '—') ?></td>
     <td>
-        <a href="students.php?edit=<?= $s['id'] ?>">Edit</a>
-
+        <!-- EDIT (POST) -->
         <form method="post" style="display:inline;">
-            <input type="hidden" name="id"
-                   value="<?= $s['id'] ?>">
+            <input type="hidden" name="edit_id" value="<?= $s['id'] ?>">
+            <button name="edit_student">Edit</button>
+        </form>
+
+        <!-- DELETE -->
+        <form method="post" style="display:inline;">
+            <input type="hidden" name="id" value="<?= $s['id'] ?>">
             <button name="delete_student"
                     onclick="return confirm('Delete this student?')">
                 Delete
@@ -203,7 +207,7 @@ document.getElementById("studentSearch").addEventListener("keyup", function () {
     const rows = document.querySelectorAll("#studentTable tr");
 
     rows.forEach((row, index) => {
-        if (index === 0) return; // skip header
+        if (index === 0) return;
         row.style.display =
             row.innerText.toLowerCase().includes(search)
             ? "" : "none";

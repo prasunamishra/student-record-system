@@ -4,6 +4,23 @@ require_once "../config/db.php";
 require_once "../includes/header.php";
 
 /* =========================
+   FETCH COURSE FOR EDIT (POST)
+========================= */
+$editCourse = null;
+
+if (isset($_POST['edit_course']) && is_numeric($_POST['edit_id'])) {
+    $stmt = $pdo->prepare("SELECT * FROM courses WHERE id = ?");
+    $stmt->execute([$_POST['edit_id']]);
+    $editCourse = $stmt->fetch();
+
+    if (!$editCourse) {
+        setFlash('error', 'Course not found.');
+        header("Location: courses.php");
+        exit;
+    }
+}
+
+/* =========================
    ADD COURSE
 ========================= */
 if (isset($_POST['add_course'])) {
@@ -19,32 +36,9 @@ if (isset($_POST['add_course'])) {
         "INSERT INTO courses (course_name) VALUES (?)"
     );
 
-    if ($stmt->execute([$course_name])) {
-        setFlash('success', 'Course added successfully.');
-    } else {
-        setFlash('error', 'Failed to add course.');
-    }
+    $stmt->execute([$course_name]);
 
-    header("Location: courses.php");
-    exit;
-}
-
-/* =========================
-   DELETE COURSE
-========================= */
-if (isset($_POST['delete_course'])) {
-    $id = $_POST['id'];
-
-    $stmt = $pdo->prepare(
-        "DELETE FROM courses WHERE id = ?"
-    );
-
-    if ($stmt->execute([$id])) {
-        setFlash('success', 'Course deleted.');
-    } else {
-        setFlash('error', 'Delete failed.');
-    }
-
+    setFlash('success', 'Course added successfully.');
     header("Location: courses.php");
     exit;
 }
@@ -66,12 +60,24 @@ if (isset($_POST['update_course'])) {
         "UPDATE courses SET course_name = ? WHERE id = ?"
     );
 
-    if ($stmt->execute([$course_name, $id])) {
-        setFlash('success', 'Course updated.');
-    } else {
-        setFlash('error', 'Update failed.');
-    }
+    $stmt->execute([$course_name, $id]);
 
+    setFlash('success', 'Course updated.');
+    header("Location: courses.php");
+    exit;
+}
+
+/* =========================
+   DELETE COURSE
+========================= */
+if (isset($_POST['delete_course']) && is_numeric($_POST['id'])) {
+    $stmt = $pdo->prepare(
+        "DELETE FROM courses WHERE id = ?"
+    );
+
+    $stmt->execute([$_POST['id']]);
+
+    setFlash('success', 'Course deleted.');
     header("Location: courses.php");
     exit;
 }
@@ -86,12 +92,19 @@ $courses = $pdo->query(
 
 <h2>Manage Courses</h2>
 
-<!-- ADD COURSE -->
+<!-- ADD / EDIT COURSE FORM -->
 <form method="post">
+    <input type="hidden" name="id"
+           value="<?= $editCourse['id'] ?? '' ?>">
+
     <input type="text" name="course_name"
-           placeholder="Course Name" required>
-    <button type="submit" name="add_course">
-        Add Course
+           placeholder="Course Name"
+           value="<?= $editCourse['course_name'] ?? '' ?>"
+           required>
+
+    <button type="submit"
+            name="<?= $editCourse ? 'update_course' : 'add_course' ?>">
+        <?= $editCourse ? 'Update Course' : 'Add Course' ?>
     </button>
 </form>
 
@@ -115,14 +128,22 @@ $courses = $pdo->query(
         <td><?= htmlspecialchars($c['id']); ?></td>
         <td><?= htmlspecialchars($c['course_name']); ?></td>
         <td>
-            <a href="courses.php?edit=<?= $c['id']; ?>">Edit</a>
+            <!-- EDIT (POST) -->
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="edit_id"
+                       value="<?= $c['id']; ?>">
+                <button name="edit_course">
+                    Edit
+                </button>
+            </form>
 
-            <form method="post" style="display:inline;"
+            <!-- DELETE -->
+            <form method="post"
+                  style="display:inline;"
                   onsubmit="return confirm('Delete this course?');">
                 <input type="hidden" name="id"
                        value="<?= $c['id']; ?>">
-                <button type="submit"
-                        name="delete_course"
+                <button name="delete_course"
                         style="background:none;border:none;
                                color:#e74c3c;cursor:pointer;">
                     Delete
@@ -132,38 +153,5 @@ $courses = $pdo->query(
     </tr>
     <?php endforeach; ?>
 </table>
-
-<?php
-/* =========================
-   EDIT COURSE FORM
-========================= */
-if (isset($_GET['edit'])):
-    $stmt = $pdo->prepare(
-        "SELECT * FROM courses WHERE id = ?"
-    );
-    $stmt->execute([$_GET['edit']]);
-    $course = $stmt->fetch();
-
-    if ($course):
-?>
-
-<hr>
-
-<h3>Edit Course</h3>
-
-<form method="post">
-    <input type="hidden" name="id"
-           value="<?= $course['id']; ?>">
-
-    <input type="text" name="course_name"
-           value="<?= htmlspecialchars($course['course_name']); ?>"
-           required>
-
-    <button type="submit" name="update_course">
-        Update Course
-    </button>
-</form>
-
-<?php endif; endif; ?>
 
 <?php require_once "../includes/footer.php"; ?>
