@@ -138,7 +138,7 @@ $modules = $pdo->query(
         <tr>
             <td><?= htmlspecialchars($m['module_name']) ?></td>
             <td><?= htmlspecialchars($m['course_name']) ?></td>
-            <td>
+            <td class="actions">
                 <!-- EDIT (POST) -->
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="edit_id"

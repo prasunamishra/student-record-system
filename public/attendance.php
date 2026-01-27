@@ -128,7 +128,7 @@ $records = $pdo->query(
     <td><?= htmlspecialchars($r['student']) ?></td>
     <td><?= htmlspecialchars($r['module_name']) ?></td>
     <td><?= htmlspecialchars($r['attendance_percentage']) ?>%</td>
-    <td>
+    <td class="actions">
         <form method="post" style="display:inline;">
             <input type="hidden" name="id" value="<?= $r['id'] ?>">
             <button name="delete_attendance"

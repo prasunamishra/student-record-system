@@ -127,7 +127,7 @@ $courses = $pdo->query(
     <tr>
         <td><?= htmlspecialchars($c['id']); ?></td>
         <td><?= htmlspecialchars($c['course_name']); ?></td>
-        <td>
+        <td class="actions">
             <!-- EDIT (POST) -->
             <form method="post" style="display:inline;">
                 <input type="hidden" name="edit_id"
@@ -143,9 +143,7 @@ $courses = $pdo->query(
                   onsubmit="return confirm('Delete this course?');">
                 <input type="hidden" name="id"
                        value="<?= $c['id']; ?>">
-                <button name="delete_course"
-                        style="background:none;border:none;
-                               color:#e74c3c;cursor:pointer;">
+                <button name="delete_course">
                     Delete
                 </button>
             </form>

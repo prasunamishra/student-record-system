@@ -12,6 +12,7 @@ require_once __DIR__ . "/flash.php";
 <body>
 
 <header class="sidebar">
+
     <h2 class="logo">Student Record Management System</h2>
 
     <nav>

@@ -180,7 +180,7 @@ $students = $pdo->query(
     <td><?= htmlspecialchars($s['email']) ?></td>
     <td><?= htmlspecialchars($s['roll_number']) ?></td>
     <td><?= htmlspecialchars($s['course_name'] ?? '—') ?></td>
-    <td>
+    <td class="actions">
         <!-- EDIT (POST) -->
         <form method="post" style="display:inline;">
             <input type="hidden" name="edit_id" value="<?= $s['id'] ?>">
@@ -196,6 +196,7 @@ $students = $pdo->query(
             </button>
         </form>
     </td>
+
 </tr>
 <?php endforeach; ?>
 </table>
