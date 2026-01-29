@@ -283,17 +283,45 @@ td.actions {
    LOGIN PAGE
 ================================ */
 body.login {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    min-height: 80vh;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #f5f7fa, #e9edf2);
+    margin: 0;
+    font-family: Arial, sans-serif;
 }
 
 .login form {
-    width: 350px;
-    background: white;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    width: 320px;              /* smaller width */
+    padding: 38px 20px;        /* reduced spacing */
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+/* subtle interaction */
+.login form:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+}
+
+/* input focus (if you have inputs inside) */
+.login input {
+    width: 100%;
+    padding: 8px 10px;
+    margin: 6px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.login input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
 
 /* ===============================
    SEARCH
