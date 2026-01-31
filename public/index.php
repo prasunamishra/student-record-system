@@ -2,9 +2,7 @@
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
-/* =========================
-   DASHBOARD STATS (ORIGINAL LOGIC)
-========================= */
+/* DASHBOARD STATS (ORIGINAL LOGIC) */
 
 // Total students
 $totalStudents = $pdo->query(
@@ -35,7 +33,7 @@ $lowAttendance = $pdo->query(
 
 <h2>Dashboard</h2>
 
-<!-- SUMMARY CARDS (STRUCTURE ONLY) -->
+<!-- (STRUCTURE ONLY) -->
 <div class="cards">
     <div class="card">
         <h3>Total Students</h3>
@@ -53,30 +51,11 @@ $lowAttendance = $pdo->query(
     </div>
 </div>
 
-<!-- ORIGINAL SUMMARY TABLE -->
-<table>
-<tr>
-    <th>Metric</th>
-    <th>Value</th>
-</tr>
-<tr>
-    <td>Total Students</td>
-    <td><?= $totalStudents ?></td>
-</tr>
-<tr>
-    <td>Total Courses</td>
-    <td><?= $totalCourses ?></td>
-</tr>
-<tr>
-    <td>Total Modules</td>
-    <td><?= $totalModules ?></td>
-</tr>
-</table>
 
+<!-- LOW ATTENDANCE TABLE  -->
 
-<!-- LOW ATTENDANCE TABLE (ORIGINAL LOGIC) -->
-<h3>Students with Low Attendance (&lt; 75%)</h3>
-
+<div class="table-wrapper">
+    <h3>Students with Low Attendance (&lt; 75%)</h3>
 <table>
 <tr>
     <th>Student</th>
@@ -86,7 +65,7 @@ $lowAttendance = $pdo->query(
 
 <?php if (!$lowAttendance): ?>
 <tr>
-    <td colspan="3">No low attendance cases 🎉</td>
+    <td colspan="3">No low attendance cases </td>
 </tr>
 <?php endif; ?>
 
@@ -94,10 +73,14 @@ $lowAttendance = $pdo->query(
 <tr>
     <td><?= htmlspecialchars($row['name']) ?></td>
     <td><?= htmlspecialchars($row['module_name']) ?></td>
-    <td><?= htmlspecialchars($row['attendance_percentage']) ?>%</td>
+    <td class="low-attendance">
+    <?= htmlspecialchars($row['attendance_percentage']) ?>%
+</td>
+
 </tr>
 <?php endforeach; ?>
 </table>
+</div>
 </script>
 
 <?php require_once "../includes/footer.php"; ?>

@@ -1,19 +1,17 @@
 <?php
-/* =========================
-   DATABASE CONFIG
-========================= */
+/* DATABASE */
 
 // Detect environment
 $isLocal = ($_SERVER['HTTP_HOST'] === 'localhost');
 
-/* ---------- LOCAL ---------- */
+/* LOCAL */
 if ($isLocal) {
     $host     = "localhost";
     $dbname   = "student_record_system";
     $username = "root";
     $password = "";
 }
-/* ---------- SERVER ---------- */
+/* SERVER */
 else {
     $host     = "localhost";
     $dbname   = "np03cs4s250105";

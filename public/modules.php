@@ -5,28 +5,24 @@ require_once "../includes/header.php";
 
 $editModule = null;
 
-/* ===============================
-   FETCH MODULE FOR EDIT (POST)
-================================ */
+/* FETCH MODULE FOR EDIT (POST) */
 if (isset($_POST['edit_module']) && is_numeric($_POST['edit_id'])) {
     $stmt = $pdo->prepare("SELECT * FROM modules WHERE id = ?");
     $stmt->execute([$_POST['edit_id']]);
     $editModule = $stmt->fetch();
 
     if (!$editModule) {
-        setFlash('error', 'Module not found.');
+        setMessage('error', 'Module not found.');
         header("Location: modules.php");
         exit;
     }
 }
 
-/* ===============================
-   ADD MODULE
-================================ */
+/*ADD MODULE*/
 if (isset($_POST['add_module'])) {
 
     if (empty($_POST['module_name']) || empty($_POST['course_id'])) {
-        setFlash('error', 'Module name and course are required.');
+        setMessage('error', 'Module name and course are required.');
         header("Location: modules.php");
         exit;
     }
@@ -40,18 +36,16 @@ if (isset($_POST['add_module'])) {
         $_POST['course_id']
     ]);
 
-    setFlash('success', 'Module added successfully.');
+    setMessage('success', 'Module added successfully.');
     header("Location: modules.php");
     exit;
 }
 
-/* ===============================
-   UPDATE MODULE
-================================ */
+/* UPDATE MODULE */
 if (isset($_POST['update_module'])) {
 
     if (empty($_POST['module_name']) || empty($_POST['course_id'])) {
-        setFlash('error', 'Module name and course are required.');
+        setMessage('error', 'Module name and course are required.');
         header("Location: modules.php");
         exit;
     }
@@ -67,26 +61,22 @@ if (isset($_POST['update_module'])) {
         $_POST['id']
     ]);
 
-    setFlash('success', 'Module updated successfully.');
+    setMessage('success', 'Module updated successfully.');
     header("Location: modules.php");
     exit;
 }
 
-/* ===============================
-   DELETE MODULE
-================================ */
+/* DELETE MODULE */
 if (isset($_POST['delete_module']) && is_numeric($_POST['id'])) {
     $pdo->prepare("DELETE FROM modules WHERE id = ?")
         ->execute([$_POST['id']]);
 
-    setFlash('success', 'Module deleted.');
+    setMessage('success', 'Module deleted.');
     header("Location: modules.php");
     exit;
 }
 
-/* ===============================
-   FETCH DATA
-================================ */
+/* FETCH DATA */
 $courses = $pdo->query("SELECT * FROM courses")->fetchAll();
 
 $modules = $pdo->query(
@@ -99,7 +89,6 @@ $modules = $pdo->query(
 
 <h2>Manage Modules</h2>
 
-<!-- ADD / EDIT MODULE FORM -->
 <form method="post">
     <input type="hidden" name="id"
            value="<?= $editModule['id'] ?? '' ?>">
@@ -139,14 +128,12 @@ $modules = $pdo->query(
             <td><?= htmlspecialchars($m['module_name']) ?></td>
             <td><?= htmlspecialchars($m['course_name']) ?></td>
             <td class="actions">
-                <!-- EDIT (POST) -->
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="edit_id"
                            value="<?= $m['id'] ?>">
                     <button name="edit_module">Edit</button>
                 </form>
 
-                <!-- DELETE -->
                 <form method="post" style="display:inline;">
                     <input type="hidden" name="id"
                            value="<?= $m['id'] ?>">

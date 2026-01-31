@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . "/auth.php";
-require_once __DIR__ . "/flash.php";
+require_once __DIR__ . "/messages.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,4 +27,5 @@ require_once __DIR__ . "/flash.php";
 </header>
 
 <main class="main-content">
-<?php showFlash(); ?>
+<?php showMessage(); ?>
+

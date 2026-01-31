@@ -1,4 +1,5 @@
 <?php
+// Include database connection file
 require_once "../config/db.php";
 
 $query = trim($_GET['q'] ?? '');
@@ -18,7 +19,9 @@ $stmt = $pdo->prepare("
     LIMIT 10
 ");
 
+//partial matching
 $like = "%$query%";
 $stmt->execute([$like, $like, $like]);
 
+// Fetch results as associative array and return as JSON
 echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));

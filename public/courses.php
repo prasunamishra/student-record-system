@@ -2,10 +2,9 @@
 require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
+require_once "../includes/functions.php";
 
-/* =========================
-   FETCH COURSE FOR EDIT (POST)
-========================= */
+/* FETCH COURSE FOR EDIT (POST) */
 $editCourse = null;
 
 if (isset($_POST['edit_course']) && is_numeric($_POST['edit_id'])) {
@@ -14,20 +13,26 @@ if (isset($_POST['edit_course']) && is_numeric($_POST['edit_id'])) {
     $editCourse = $stmt->fetch();
 
     if (!$editCourse) {
-        setFlash('error', 'Course not found.');
+        setMessage('error', 'Course not found.');
         header("Location: courses.php");
         exit;
     }
 }
 
-/* =========================
-   ADD COURSE
-========================= */
+/* ADD COURSE (CSRF PROTECTED) */
 if (isset($_POST['add_course'])) {
+
+    //  CSRF CHECK
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        setMessage('error', 'Invalid CSRF token.');
+        header("Location: courses.php");
+        exit;
+    }
+
     $course_name = trim($_POST['course_name']);
 
     if ($course_name === "") {
-        setFlash('error', 'Course name is required.');
+        setMessage('error', 'Course name is required.');
         header("Location: courses.php");
         exit;
     }
@@ -35,23 +40,20 @@ if (isset($_POST['add_course'])) {
     $stmt = $pdo->prepare(
         "INSERT INTO courses (course_name) VALUES (?)"
     );
-
     $stmt->execute([$course_name]);
 
-    setFlash('success', 'Course added successfully.');
+    setMessage('success', 'Course added successfully.');
     header("Location: courses.php");
     exit;
 }
 
-/* =========================
-   UPDATE COURSE
-========================= */
+/* UPDATE COURSE */
 if (isset($_POST['update_course'])) {
     $id = $_POST['id'];
     $course_name = trim($_POST['course_name']);
 
     if ($course_name === "") {
-        setFlash('error', 'Course name is required.');
+        setMessage('error', 'Course name is required.');
         header("Location: courses.php");
         exit;
     }
@@ -59,41 +61,38 @@ if (isset($_POST['update_course'])) {
     $stmt = $pdo->prepare(
         "UPDATE courses SET course_name = ? WHERE id = ?"
     );
-
     $stmt->execute([$course_name, $id]);
 
-    setFlash('success', 'Course updated.');
+    setMessage('success', 'Course updated.');
     header("Location: courses.php");
     exit;
 }
 
-/* =========================
-   DELETE COURSE
-========================= */
+/* DELETE COURSE */
 if (isset($_POST['delete_course']) && is_numeric($_POST['id'])) {
     $stmt = $pdo->prepare(
         "DELETE FROM courses WHERE id = ?"
     );
-
     $stmt->execute([$_POST['id']]);
 
-    setFlash('success', 'Course deleted.');
+    setMessage('success', 'Course deleted.');
     header("Location: courses.php");
     exit;
 }
 
-/* =========================
-   FETCH COURSES
-========================= */
-$courses = $pdo->query(
-    "SELECT * FROM courses"
-)->fetchAll();
+/* FETCH COURSES */
+$courses = $pdo->query("SELECT * FROM courses")->fetchAll();
 ?>
 
 <h2>Manage Courses</h2>
 
 <!-- ADD / EDIT COURSE FORM -->
 <form method="post">
+
+    <!--  CSRF TOKEN -->
+    <input type="hidden" name="csrf_token"
+           value="<?= generateCSRFToken(); ?>">
+
     <input type="hidden" name="id"
            value="<?= $editCourse['id'] ?? '' ?>">
 
@@ -128,7 +127,7 @@ $courses = $pdo->query(
         <td><?= htmlspecialchars($c['id']); ?></td>
         <td><?= htmlspecialchars($c['course_name']); ?></td>
         <td class="actions">
-            <!-- EDIT (POST) -->
+            <!-- EDIT -->
             <form method="post" style="display:inline;">
                 <input type="hidden" name="edit_id"
                        value="<?= $c['id']; ?>">

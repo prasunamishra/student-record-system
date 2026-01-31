@@ -3,9 +3,7 @@ require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
-/* =========================
-   FETCH STUDENT FOR EDIT (POST)
-========================= */
+/* FETCH STUDENT FOR EDIT (POST)*/
 $editStudent = null;
 
 if (isset($_POST['edit_student']) && is_numeric($_POST['edit_id'])) {
@@ -14,15 +12,13 @@ if (isset($_POST['edit_student']) && is_numeric($_POST['edit_id'])) {
     $editStudent = $stmt->fetch();
 
     if (!$editStudent) {
-        setFlash('error', 'Student not found.');
+        setMessage('error', 'Student not found.');
         header("Location: students.php");
         exit;
     }
 }
 
-/* =========================
-   ADD STUDENT
-========================= */
+/*  ADD STUDENT */
 if (isset($_POST['add_student'])) {
     $name  = trim($_POST['name']);
     $email = trim($_POST['email']);
@@ -30,7 +26,7 @@ if (isset($_POST['add_student'])) {
     $course_id = $_POST['course_id'];
 
     if ($name === "" || $email === "" || $roll === "") {
-        setFlash('error', 'All fields are required.');
+        setMessage('error', 'All fields are required.');
         header("Location: students.php");
         exit;
     }
@@ -41,7 +37,7 @@ if (isset($_POST['add_student'])) {
     $check->execute([$email, $roll]);
 
     if ($check->fetch()) {
-        setFlash('error', 'Email or Roll Number already exists.');
+        setMessage('error', 'Email or Roll Number already exists.');
         header("Location: students.php");
         exit;
     }
@@ -52,14 +48,12 @@ if (isset($_POST['add_student'])) {
     );
     $stmt->execute([$name, $email, $roll, $course_id]);
 
-    setFlash('success', 'Student added successfully.');
+    setMessage('success', 'Student added successfully.');
     header("Location: students.php");
     exit;
 }
 
-/* =========================
-   UPDATE STUDENT
-========================= */
+/* UPDATE STUDENT*/
 if (isset($_POST['update_student'])) {
     $id    = $_POST['id'];
     $name  = trim($_POST['name']);
@@ -68,7 +62,7 @@ if (isset($_POST['update_student'])) {
     $course_id = $_POST['course_id'];
 
     if ($name === "" || $email === "" || $roll === "") {
-        setFlash('error', 'All fields are required.');
+        setMessage('error', 'All fields are required.');
         header("Location: students.php");
         exit;
     }
@@ -81,7 +75,7 @@ if (isset($_POST['update_student'])) {
     $check->execute([$email, $roll, $id]);
 
     if ($check->fetch()) {
-        setFlash('error', 'Email or Roll Number already used.');
+        setMessage('error', 'Email or Roll Number already used.');
         header("Location: students.php");
         exit;
     }
@@ -93,26 +87,22 @@ if (isset($_POST['update_student'])) {
     );
     $stmt->execute([$name, $email, $roll, $course_id, $id]);
 
-    setFlash('success', 'Student updated successfully.');
+    setMessage('success', 'Student updated successfully.');
     header("Location: students.php");
     exit;
 }
 
-/* =========================
-   DELETE STUDENT
-========================= */
+/* DELETE STUDENT */
 if (isset($_POST['delete_student']) && is_numeric($_POST['id'])) {
     $pdo->prepare("DELETE FROM students WHERE id = ?")
         ->execute([$_POST['id']]);
 
-    setFlash('success', 'Student deleted.');
+    setMessage('success', 'Student deleted.');
     header("Location: students.php");
     exit;
 }
 
-/* =========================
-   FETCH DATA
-========================= */
+/* FETCH DATA */
 $courses = $pdo->query("SELECT * FROM courses")->fetchAll();
 
 $students = $pdo->query(
@@ -181,13 +171,11 @@ $students = $pdo->query(
     <td><?= htmlspecialchars($s['roll_number']) ?></td>
     <td><?= htmlspecialchars($s['course_name'] ?? '—') ?></td>
     <td class="actions">
-        <!-- EDIT (POST) -->
         <form method="post" style="display:inline;">
             <input type="hidden" name="edit_id" value="<?= $s['id'] ?>">
             <button name="edit_student">Edit</button>
         </form>
 
-        <!-- DELETE -->
         <form method="post" style="display:inline;">
             <input type="hidden" name="id" value="<?= $s['id'] ?>">
             <button name="delete_student"
@@ -196,12 +184,10 @@ $students = $pdo->query(
             </button>
         </form>
     </td>
-
 </tr>
 <?php endforeach; ?>
 </table>
 
-<!-- LIVE SEARCH SCRIPT -->
 <script>
 document.getElementById("studentSearch").addEventListener("keyup", function () {
     const search = this.value.toLowerCase();

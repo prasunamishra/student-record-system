@@ -1,56 +1,67 @@
 <?php
 session_start();
-require_once "../config/db.php";
 
-// If already logged in
+require_once "../config/db.php";
+require_once "../includes/messages.php"; // <-- IMPORTANT
+
+// Already logged in
 if (isset($_SESSION['admin_id'])) {
     header("Location: index.php");
     exit;
 }
 
-$error = "";
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
 
-    $stmt = $pdo->prepare("SELECT * FROM admins WHERE username = ?");
+    $stmt = $pdo->prepare(
+        "SELECT id, username, password 
+         FROM admins 
+         WHERE username = ? 
+         LIMIT 1"
+    );
     $stmt->execute([$username]);
-    $admin = $stmt->fetch();
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($admin && password_verify($password, $admin['password'])) {
+
+        session_regenerate_id(true);
+
         $_SESSION['admin_id'] = $admin['id'];
         $_SESSION['admin_username'] = $admin['username'];
+
         header("Location: index.php");
         exit;
+
     } else {
-        $error = "Invalid username or password";
+        setMessage('error', 'Invalid username or password');
+        header("Location: login.php");
+        exit;
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Admin Login</title>
     <link rel="stylesheet" href="../assets/css/style.css">
-
 </head>
-<body>
+
 <body class="login">
 
-<h2>Admin Login</h2>
+<h2>ADMIN LOGIN</h2>
 
-<?php if ($error): ?>
-<p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
-<?php endif; ?>
+<?php showMessage(); ?>
 
 <form method="post">
     <label>Username:</label><br>
-    <input type="text" name="username" required><br><br>
+    <input type="text" name="username" required>
 
     <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
+    <input type="password" name="password" required>
 
     <button type="submit">Login</button>
 </form>

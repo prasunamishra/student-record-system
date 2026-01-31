@@ -3,9 +3,7 @@ require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
-/* =========================
-   ADD GRADE (VALIDATION)
-========================= */
+/* ADD GRADE (VALIDATION) */
 if (isset($_POST['add_grade'])) {
     $student_id = $_POST['student_id'];
     $module_id  = $_POST['module_id'];
@@ -14,7 +12,7 @@ if (isset($_POST['add_grade'])) {
     $allowedGrades = ['A', 'B', 'C', 'D', 'E' , 'F'];
 
     if (!in_array($grade, $allowedGrades)) {
-        setFlash(
+        setMessage(
             'error',
             'Invalid grade. Allowed grades: A, B, C, D, E, F.'
         );
@@ -22,7 +20,7 @@ if (isset($_POST['add_grade'])) {
         exit;
     }
 
-    // 🔎 Prevent duplicate grade for same student & module
+    // Prevent duplicate grade for same student & module
     $check = $pdo->prepare(
         "SELECT id FROM grades
          WHERE student_id = ? AND module_id = ?"
@@ -30,7 +28,7 @@ if (isset($_POST['add_grade'])) {
     $check->execute([$student_id, $module_id]);
 
     if ($check->fetch()) {
-        setFlash(
+        setMessage(
             'error',
             'Grade already exists for this student and module.'
         );
@@ -38,33 +36,29 @@ if (isset($_POST['add_grade'])) {
         exit;
     }
 
-    // ✅ Insert grade
+    // Insert grade
     $stmt = $pdo->prepare(
         "INSERT INTO grades (student_id, module_id, grade)
          VALUES (?, ?, ?)"
     );
     $stmt->execute([$student_id, $module_id, $grade]);
 
-    setFlash('success', 'Grade added successfully.');
+    setMessage('success', 'Grade added successfully.');
     header("Location: grades.php");
     exit;
 }
 
-/* =========================
-   DELETE GRADE
-========================= */
+/* DELETE GRADE */
 if (isset($_POST['delete_grade'])) {
     $pdo->prepare("DELETE FROM grades WHERE id = ?")
         ->execute([$_POST['id']]);
 
-    setFlash('success', 'Grade deleted.');
+    setMessage('success', 'Grade deleted.');
     header("Location: grades.php");
     exit;
 }
 
-/* =========================
-   FETCH DATA
-========================= */
+/* FETCH DATA */
 $students = $pdo->query(
     "SELECT id, name FROM students"
 )->fetchAll();

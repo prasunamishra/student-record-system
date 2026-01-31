@@ -3,21 +3,19 @@ require_once "../includes/auth.php";
 require_once "../config/db.php";
 require_once "../includes/header.php";
 
-/* =========================
-   ADD ATTENDANCE (NO DUPLICATES)
-========================= */
+/*ADD ATTENDANCE (NO DUPLICATES)*/
 if (isset($_POST['add_attendance'])) {
     $student_id = $_POST['student_id'];
     $module_id  = $_POST['module_id'];
     $attendance = $_POST['attendance'];
 
     if ($attendance < 0 || $attendance > 100) {
-        setFlash('error', 'Attendance must be between 0 and 100.');
+        setMessage('error', 'Attendance must be between 0 and 100.');
         header("Location: attendance.php");
         exit;
     }
 
-    // 🔎 Check duplicate attendance
+    // Checking duplicate attendance
     $check = $pdo->prepare(
         "SELECT id FROM attendance
          WHERE student_id = ? AND module_id = ?"
@@ -25,7 +23,7 @@ if (isset($_POST['add_attendance'])) {
     $check->execute([$student_id, $module_id]);
 
     if ($check->fetch()) {
-        setFlash(
+        setMessage(
             'error',
             'Attendance for this student and module already exists.'
         );
@@ -33,33 +31,29 @@ if (isset($_POST['add_attendance'])) {
         exit;
     }
 
-    // ✅ Insert attendance
+    // Insert attendance
     $stmt = $pdo->prepare(
         "INSERT INTO attendance (student_id, module_id, attendance_percentage)
          VALUES (?, ?, ?)"
     );
     $stmt->execute([$student_id, $module_id, $attendance]);
 
-    setFlash('success', 'Attendance added successfully.');
+    setMessage('success', 'Attendance added successfully.');
     header("Location: attendance.php");
     exit;
 }
 
-/* =========================
-   DELETE ATTENDANCE
-========================= */
+/*DELETE ATTENDANCE*/
 if (isset($_POST['delete_attendance'])) {
     $pdo->prepare("DELETE FROM attendance WHERE id = ?")
         ->execute([$_POST['id']]);
 
-    setFlash('success', 'Attendance deleted.');
+    setMessage('success', 'Attendance deleted.');
     header("Location: attendance.php");
     exit;
 }
 
-/* =========================
-   FETCH DATA
-========================= */
+/* FETCH DATA */
 $students = $pdo->query(
     "SELECT id, name FROM students"
 )->fetchAll();
